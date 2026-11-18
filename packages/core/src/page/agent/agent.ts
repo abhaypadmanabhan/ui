@@ -1368,9 +1368,11 @@ function createAgent(
           `${entry.component} ${entry.ref} takes no ${action} now. It takes: ${actions.join(", ") || "nothing"}.${actions.includes("press") ? pressable(instance) : ""}`
         )
       }
+      // Command's `run` takes one of its commands. Another component's own `run` takes what it says.
+      const runsCommand = action === "run" && entry.component === "command"
       // A run with no command runs the highlighted one, so it's named here, where its marks are read
       // and the approved one is the one that runs.
-      if (action === "run" && args[0] == null) {
+      if (runsCommand && args[0] == null) {
         const highlighted = (instance.get() as { value?: unknown }).value
         if (highlighted == null) {
           throw new Error(
@@ -1381,7 +1383,7 @@ function createAgent(
       }
       // The api reads a list as the command whose value is its text, so only that
       // text names the command whose marks are read.
-      if (action === "run" && typeof args[0] !== "string") {
+      if (runsCommand && typeof args[0] !== "string") {
         throw new Error(
           `Name one command to run in ${entry.label ?? entry.component} (${entry.ref}), by its value or label.`
         )
@@ -1556,9 +1558,10 @@ function createAgent(
       if (
         entry.component !== "autocomplete" &&
         args[0] !== undefined &&
-        ["setValue", "setChecked", "select", "open", "toggle", "run"].includes(
+        (["setValue", "setChecked", "select", "open", "toggle"].includes(
           action
-        )
+        ) ||
+          runsCommand)
       ) {
         const value = (instance.get() as Record<string, unknown>)[
           action === "setChecked" ? "checked" : "value"
@@ -1630,14 +1633,13 @@ function createAgent(
         }
         refuseBlocked()
         // A command the query or page hides has no element, so none of its marks.
-        const hidden =
-          action === "run"
-            ? chosen.find(
-                (item) =>
-                  !elementOf?.(item) &&
-                  !bound(instance).some((part) => part.key === item)
-              )
-            : undefined
+        const hidden = runsCommand
+          ? chosen.find(
+              (item) =>
+                !elementOf?.(item) &&
+                !bound(instance).some((part) => part.key === item)
+            )
+          : undefined
         if (hidden !== undefined) {
           const label =
             (dataOf(entry, instance) ?? []).find(
