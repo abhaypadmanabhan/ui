@@ -26,7 +26,7 @@ import {
   isISODate,
   type ISODate,
 } from "../../foundation/date/plain-date"
-import { formInternals } from "../../foundation/forms/form"
+import { dispatchChange, formInternals } from "../../foundation/forms/form"
 import { initialApple } from "../../foundation/platform/platform"
 import { deriveOpen } from "../../foundation/popups/popup"
 import {
@@ -156,6 +156,7 @@ function datePickerApiBody(
     DatePickerMonthChangeReason
   >(context, {
     picked(event) {
+      dispatchChange(formElement())
       if (store.get().closeOnSelect) {
         control.hide({ reason: "item-press", event })
       }
@@ -201,6 +202,8 @@ function datePickerApiBody(
   const triggerElement = () =>
     element("trigger") ?? element("input", "start") ?? element("input")
   const inputElement = () => element("input", "start") ?? element("input")
+  const formElement = () =>
+    formInternals(element("root")) ? element("root") : inputElement()
   // The first input whose text isn't a date, the start before the end.
   const invalidInput = () => {
     const state = store.get()
@@ -353,6 +356,9 @@ function datePickerApiBody(
     store.set({ anchor: null, hover: null })
     clearDrafts()
     const changed = setValue(normalized, reason, event)
+    if (changed && reason === "preset-press") {
+      dispatchChange(formElement())
+    }
     const first = Array.isArray(normalized) ? normalized[0] : normalized
     if (first && isISODate(first) && reason === "preset-press") {
       reveal(first, reason, event)
