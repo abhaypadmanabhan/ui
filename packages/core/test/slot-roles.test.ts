@@ -253,3 +253,10 @@ test("listbox declares its roles and what they need", () => {
   expect(partAttrs(instance.part("separator")).role).toBe("none")
   expect(read()).toEqual([])
 })
+
+test("pagination's page link declares how it takes focus", async () => {
+  const read = warnings()
+  vi.resetModules()
+  await import("../src/components/pagination/pagination")
+  expect(read()).toEqual([])
+})
